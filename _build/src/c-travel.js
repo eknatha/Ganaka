@@ -1,0 +1,28 @@
+(function(G){'use strict';
+var N=G.N,S=G.S,R=G.R,def=G.def,fail=G.fail;
+function need(c,m){if(!c)fail(m);}
+function hm(h){var m=Math.round(h*60);return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m';}
+def({id:'fuel-cost',cat:'travel',name:'Trip Fuel Cost Calculator',desc:'Fuel needed and cost for a journey.',keywords:'petrol diesel road trip cost',
+ fields:[N('d','Distance (km)',450),N('m','Mileage (km per litre)',16),N('p','Fuel price per litre',102),N('r','Round trip?',1,{min:1,max:2,step:1})],formula:'Fuel = distance ÷ mileage; cost = fuel × price. Enter 2 in the last box for a round trip.',
+ calc:function(v){need(v.m>0,'Mileage must be above zero');var d=v.d*(v.r>=2?2:1),l=d/v.m;return{res:[R('Fuel cost',l*v.p,'cur',{hero:1}),R('Fuel needed (L)',l,'num'),R('Cost per km',v.p/v.m,'cur'),R('Distance',d,'num')]};}});
+def({id:'mileage',cat:'travel',name:'Fuel Mileage Calculator',desc:'Your real mileage from a full-tank fill-up.',keywords:'km per litre mpg efficiency',
+ fields:[N('d','Distance since last fill (km)',520),N('l','Fuel added (litres)',32),N('p','Price per litre',102)],formula:'Mileage = distance ÷ fuel.',
+ calc:function(v){need(v.l>0&&v.d>0,'Enter distance and fuel');return{res:[R('km per litre',v.d/v.l,'num',{hero:1}),R('L per 100 km',v.l/v.d*100,'num'),R('MPG (US)',v.d/1.609344/(v.l/3.785411784),'num'),R('Cost per km',v.l*v.p/v.d,'cur')]};}});
+def({id:'speed-distance-time',cat:'travel',name:'Speed, Distance & Time Calculator',desc:'Find whichever of the three you do not know.',keywords:'travel time arrival',
+ fields:[S('f','Find',[['t','Time'],['s','Speed'],['d','Distance']]),N('d','Distance (km)',300),N('s','Speed (km/h)',60),N('t','Time (hours)',5)],formula:'Distance = speed × time.',
+ calc:function(v){if(v.f==='t'){need(v.s>0,'Speed must be above zero');return{res:[R('Time',hm(v.d/v.s),'text',{hero:1}),R('Hours',v.d/v.s,'num')]};}if(v.f==='s'){need(v.t>0,'Time must be above zero');return{res:[R('Speed (km/h)',v.d/v.t,'num',{hero:1}),R('Speed (m/s)',v.d/v.t/3.6,'num')]};}return{res:[R('Distance (km)',v.s*v.t,'num',{hero:1})]};}});
+def({id:'trip-split',cat:'travel',name:'Trip Expense Splitter',desc:'Who owes whom after a group trip.',keywords:'group travel split settle expenses',
+ fields:[G.ROWS('p','Who paid what',['Name','Paid'],[['Asha',8200],['Ravi',1500],['Meena',0],['Kiran',3300]])],formula:'Each person\'s balance = paid − equal share. Settlements pair the biggest debtor with the biggest creditor.',
+ calc:function(v){var ps=v.p.map(function(r){return{n:String(r[0]),p:+r[1]||0};}).filter(function(x){return x.n;});need(ps.length>=2,'Add at least two people');var tot=G.sum(ps.map(function(x){return x.p;})),sh=tot/ps.length,b=ps.map(function(x){return{n:x.n,v:G.round(x.p-sh,2)};}),cr=b.filter(function(x){return x.v>0.005;}).sort(function(a,c){return c.v-a.v;}),de=b.filter(function(x){return x.v<-0.005;}).sort(function(a,c){return a.v-c.v;}),rows=[];
+  var i=0,j=0;while(i<cr.length&&j<de.length){var m=Math.min(cr[i].v,-de[j].v);rows.push([de[j].n+' pays '+cr[i].n,m]);cr[i].v-=m;de[j].v+=m;if(cr[i].v<0.005)i++;if(de[j].v>-0.005)j++;}
+  return{res:[R('Total spent',tot,'cur'),R('Equal share',sh,'cur',{hero:1})],table:{title:'Settle up',cols:['Payment','Amount'],kinds:['text','cur'],rows:rows.length?rows:[['Everyone is even',0]]}};}});
+def({id:'ev-charge',cat:'travel',name:'EV Charging Time & Cost Calculator',desc:'How long charging takes and what it costs.',keywords:'electric vehicle kwh charger',
+ fields:[N('cap','Battery capacity (kWh)',40),N('from','Charge from (%)',20),N('to','Charge to (%)',80),N('kw','Charger power (kW)',7.4),N('eff','Charging efficiency (%)',90),N('p','Electricity price per kWh',8)],formula:'Energy = capacity × (to − from); time = energy ÷ (power × efficiency).',
+ calc:function(v){need(v.to>v.from&&v.kw>0&&v.eff>0,'Check the percentages and power');var e=v.cap*(v.to-v.from)/100,drawn=e/(v.eff/100);return{res:[R('Charging time',hm(drawn/v.kw),'text',{hero:1}),R('Energy added (kWh)',e,'num'),R('Energy from grid (kWh)',drawn,'num'),R('Cost',drawn*v.p,'cur')]};}});
+def({id:'fuel-vs-ev',cat:'travel',name:'Petrol vs EV Running Cost',desc:'Cost per km and yearly savings of going electric.',keywords:'electric vs petrol saving',
+ fields:[N('km','Distance per year (km)',12000),N('m','Petrol car mileage (km/L)',15),N('pp','Petrol price per litre',102),N('wh','EV consumption (Wh/km)',130),N('ep','Electricity price per kWh',8)],formula:'Petrol cost/km = price ÷ mileage; EV cost/km = Wh/km ÷ 1000 × tariff.',
+ calc:function(v){need(v.m>0,'Mileage must be above zero');var pc=v.pp/v.m,ec=v.wh/1000*v.ep;return{res:[R('Yearly saving',(pc-ec)*v.km,'cur',{hero:1}),R('Petrol cost per km',pc,'cur'),R('EV cost per km',ec,'cur'),R('Petrol per year',pc*v.km,'cur'),R('EV per year',ec*v.km,'cur')]};}});
+def({id:'carbon-trip',cat:'travel',name:'Trip Carbon Footprint Calculator',desc:'CO₂ from a journey by car, bus, train or flight.',keywords:'emissions co2 flight',
+ fields:[N('d','Distance (km)',500),S('m','Mode',[[0.171,'Petrol car'],[0.153,'Diesel car'],[0.089,'Bus'],[0.041,'Train'],[0.255,'Short flight'],[0.150,'Long flight'],[0.03,'Electric car (grid avg)']]),N('p','Passengers sharing',1)],formula:'CO₂ = distance × kg per passenger-km (typical average factors; real values vary by vehicle and country).',
+ calc:function(v){need(v.p>=1,'At least one passenger');var car=[0.171,0.153,0.03].indexOf(+v.m)>=0,c=v.d*v.m/(car?v.p:1);return{res:[R('CO₂ (kg)',c,'num',{hero:1}),R('Trees needed for a year (approx.)',c/21,'num')],note:'Car factors are per vehicle and are divided by passengers. Averages only.'};}});
+})(typeof window!=='undefined'?window.G:globalThis.G);

@@ -1,0 +1,32 @@
+const G=require('../src/all.js');
+const C=(id,inp)=>{const c=G.byId[id];const v={};c.fields.forEach(f=>v[f.id]=f.def);Object.assign(v,inp);const o=c.calc(v);const r={};o.res.forEach(x=>r[x.label]=x.value);return{id,inp:v,r,table:o.table&&o.table.rows};};
+const cases=[
+ C('emi',{P:1000000,rate:8.5,n:20,u:'y'}),C('emi',{P:500000,rate:0,n:60,u:'m'}),C('emi',{P:2500000,rate:9,n:20,u:'y'}),
+ C('loan-prepay',{P:2500000,rate:9,yrs:20,extra:5000}),
+ C('sip',{m:10000,rate:12,yrs:15}),C('sip',{m:5000,rate:0,yrs:10}),C('step-up-sip',{m:10000,step:10,rate:12,yrs:15}),C('sip-goal',{goal:10000000,rate:12,yrs:20}),
+ C('lumpsum',{P:500000,rate:12,yrs:10}),C('compound-interest',{P:100000,add:0,rate:7,yrs:10,f:12}),C('compound-interest',{P:100000,add:5000,rate:8,yrs:5,f:4}),
+ C('simple-interest',{P:100000,rate:8,t:3}),C('fd',{P:200000,rate:7,yrs:5,f:4}),C('rd',{m:5000,rate:6.5,mo:60}),C('ppf',{y:150000,rate:7.1,yrs:15}),
+ C('mortgage',{price:400000,down:20,rate:6.5,yrs:30,tax:1.1,ins:1200}),C('cc-payoff',{b:100000,apr:36,pay:6000}),
+ ...[[700000,0],[1200000,0],[1275000,0],[1300000,0],[1500000,0],[2500000,0],[6000000,0],[60000000,0],[250000000,0]].map(([g])=>C('income-tax-india',{gross:g,ded:0,other:0,age:30})),
+ C('income-tax-india',{gross:1000000,ded:150000,other:0,age:30}),C('income-tax-india',{gross:3000000,ded:300000,other:0,age:30}),C('income-tax-india',{gross:550000,ded:0,other:0,age:30}),C('income-tax-india',{gross:600000,ded:0,other:0,age:65}),
+ C('roi',{inv:100000,fin:150000,yrs:3}),C('cagr',{s:100000,e:250000,y:5}),C('inflation',{a:100000,r:6,y:10}),C('hra',{basic:900000,hra:360000,rent:300000,metro:0.5}),C('gratuity',{sal:60000,yrs:12,cov:'y'}),
+ C('gst',{a:10000,r:18,m:'ex'}),C('gst',{a:11800,r:18,m:'in'}),C('discount',{p:2999,d1:20,d2:10}),C('profit-margin',{cost:600,price:900,tm:40}),C('breakeven',{fc:200000,vc:40,pr:100,tp:0}),C('tip',{b:2400,t:10,p:4}),
+ C('percentage',{m:'of',x:20,y:500}),C('percentage',{m:'chg',x:80,y:100}),C('percentage',{m:'rev',x:30,y:15}),
+ C('bmi',{kg:70,cm:172}),C('bmr',{sex:'m',age:30,kg:70,cm:172}),C('bmr',{sex:'f',age:30,kg:60,cm:165}),C('tdee',{sex:'m',age:30,kg:70,cm:172,act:1.55}),C('ideal-weight',{sex:'m',cm:172}),C('body-fat',{sex:'m',cm:172,neck:38,waist:85,hip:95}),C('pace',{d:10,h:0,m:55,s:0}),C('bsa',{kg:70,cm:172}),
+ C('gpa',{c:[['M','A','4'],['P','B+','3'],['E','A-','3'],['L','B','2']]}),C('attendance',{att:42,tot:52,req:75}),C('weighted-grade',{a:[['a','88','20'],['b','75','30']],target:85}),
+ C('quadratic',{a:1,b:-3,c:2}),C('quadratic',{a:2,b:4,c:10}),C('linear-system',{a1:2,b1:3,c1:13,a2:1,b2:-1,c2:2}),C('statistics',{d:'12, 15, 15, 18, 22, 25, 31, 40'}),C('permutation',{n:52,r:5}),C('permutation',{n:100,r:50}),
+ C('prime',{n:'360360'}),C('prime',{n:'1000000007'}),C("prime",{n:"600851475143"}),C('gcd-lcm',{n:'24, 36, 60'}),C('sequence',{t:'ap',a:3,d:4,n:10}),C('sequence',{t:'gp',a:2,d:0.5,n:8}),
+ C('area-shapes',{s:'tri',a:7,b:8,c:9,h:4}),C('volume-shapes',{s:'cone',a:3,b:3,h:4}),C('pythagoras',{a:5,b:0,c:13}),C('roman',{x:'2026'}),C('roman',{x:'MCMXCIV'}),
+ ...['mile|km|length|1','kg|pound|mass|1','GiB|MB|data|1','hectare|acre|area|1','mph|km/h|speed|60','kWh|kcal|energy|1','psi|kPa|pressure|14.7','gallon (US)|L|volume|1'].map(s=>{const[f,t,c,x]=s.split('|');return C('unit-converter',{c,x:+x,from:f,to:t});}),
+ C('unit-converter',{c:'temperature',x:100,from:'C',to:'F'}),C('unit-converter',{c:'temperature',x:-40,from:'F',to:'C'}),C('unit-converter',{c:'temperature',x:300,from:'K',to:'C'}),
+ C('number-base',{x:'ff',b:16}),C('number-base',{x:'18446744073709551616',b:10}),C('color',{c:'#0f766e'}),
+ C('date-difference',{a:'2024-01-31',b:'2026-10-28',inc:false}),C('date-difference',{a:'2020-02-29',b:'2024-02-28',inc:true}),C('date-add',{a:'2026-01-31',sg:'1',y:0,m:1,w:0,d:0}),C('date-add',{a:'2026-10-28',sg:'-1',y:1,m:2,w:3,d:4}),C('day-of-week',{d:'2026-12-31'}),C('day-of-week',{d:'2021-01-03'}),
+ C('age',{dob:'1990-05-15',on:'2026-10-28'}),C('age',{dob:'2000-02-29',on:'2025-02-28'}),
+ C('working-days',{m:'between',a:'2026-10-26',b:'2026-11-08',n:30,we:'06',h:'2026-11-02'}),C('working-days',{m:'add',a:'2026-10-28',b:'',n:30,we:'06',h:''}),
+ C('time-zone',{t:'2026-10-28T09:00',from:'Asia/Kolkata',to:'America/New_York'}),C('time-zone',{t:'2026-03-29T01:30',from:'Europe/London',to:'Asia/Tokyo'}),
+ C('cidr',{ip:'10.20.30.40',p:22}),C('cidr',{ip:'192.168.1.77',p:30}),C('cidr',{ip:'172.16.5.9',p:12}),C('subnet-split',{ip:'10.0.0.0',p:16,n:8}),
+ C('uptime-sla',{a:99.9}),C('uptime-sla',{a:99.99}),C('composite-sla',{a:'99.99\n99.95\n99.9',m:'s'}),C('composite-sla',{a:'99.9\n99.9',m:'p'}),C('transfer-time',{s:50,u:'GB',b:100,bu:'Mbps',e:85}),C('raid',{l:'RAID 5',n:6,sz:4}),C('raid',{l:'RAID 10',n:8,sz:2}),
+ C('error-budget',{slo:99.9,req:10000000,bad:4200,days:30,el:12}),C('fuel-cost',{d:450,m:16,p:102,r:1}),C('ev-charge',{cap:40,from:20,to:80,kw:7.4,eff:90,p:8}),C('bdp',{bw:1000,rtt:80}),C('littles-law',{rps:800,lat:120,cap:50,head:30}),
+ C('rule-of-72',{mode:'yrs',x:8}),C('retirement',{age:30,ret:60,life:85,exp:50000,inf:6,pre:12,post:8,have:500000}),C('swp',{c:5000000,w:35000,rate:8,step:0}),
+];
+console.log(JSON.stringify(cases));
