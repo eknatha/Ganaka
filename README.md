@@ -9,6 +9,11 @@ Free calculators for everyone, by [EknathaLabs](https://eknathalabs.com). *Ganak
 - Light, Dark and New themes. Interface in English, Hindi, Telugu, Kannada, Tamil and Malayalam.
 - Indian (lakh/crore) or international number grouping, and a currency symbol of your choice.
 - Every calculator has its own URL (`/emi/`, `/sip/` ...) and its inputs are kept in the query string, so results can be shared as links.
+- Sliders, currency prefixes and live digit grouping on the inputs. Default amounts follow the chosen currency (India-only tools such as income tax default to ₹ and lakh/crore).
+- Animated charts with hover and keyboard tooltips, a Compare mode (scenario A vs B) and named saved scenarios kept on the device.
+- Plain-language "What does this mean?", worked example and assumptions under each result, and short caution notes on high-risk tools.
+- Print / Save as PDF gives a clean report with an inputs summary, a watermark and a footer.
+- Accessible by design: keyboard, screen reader announcements, visible focus, reduced-motion support and an Animations switch in Settings.
 
 ## Deploy (GitHub Pages)
 
@@ -33,7 +38,8 @@ Requires Node 18 or newer. There are no npm dependencies. Set `GANAKA_BASE` if t
 |---|---|
 | `_build/src/core.js` | Calculator registry, field builders, helpers and the safe expression parser (no `eval`) |
 | `_build/src/c-*.js` | The calculators, one file per category |
-| `_build/src/i18n.js` | Interface strings in six languages |
+| `_build/src/i18n.js` | Interface strings in six languages (new strings are English first; other languages fall back to English until translated) |
+| `_build/src/content.js` | `G.INFO` (meaning, assumptions, one-line result sentence per calculator) and `G.CAUTION` (caution groups and which calculators use them) |
 | `_build/src/app.js`, `app.css` | The interface |
 | `_build/build.js` | Generates one stub page per calculator (title, description, formula, structured data) so each is crawlable, then the sitemap, manifest and service worker |
 
@@ -46,7 +52,7 @@ Add a `def({...})` block to the matching `c-*.js` file. Fields are `N` (number),
 Tests live in `_build/tests`. They need Playwright (`npm i -g playwright`, then `npx playwright install chromium`) and Python 3 with `numpy` and `python-dateutil` for the reference check.
 
 ```
-python3 -m http.server 8765          # in the repo root, in a second terminal
+python3 -m http.server 8765          # in the repo root, in a second terminal (tests use the Asia/Kolkata timezone and en-IN locale)
 cd _build
 node tests/test-ui.js                # every calculator renders with defaults, search, themes, language, URL state
 node tests/test-audit.js             # overflow at 5 widths x 3 themes x 3 languages, contrast, keyboard, fonts, offline

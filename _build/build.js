@@ -3,7 +3,7 @@ const fs=require('fs'),path=require('path'),crypto=require('crypto');
 const SRC=path.join(__dirname,'src'),OUT=path.resolve(process.env.GANAKA_OUT||path.join(__dirname,'..'));
 const BASE=process.env.GANAKA_BASE||'https://ganaka.eknathalabs.com';
 globalThis.G=globalThis.G||{};
-const FILES=['core','c-fin','c-biz','c-health','c-edu','c-math','c-date','c-conv','c-travel','c-tech','i18n'];
+const FILES=['core','c-fin','c-biz','c-health','c-edu','c-math','c-date','c-conv','c-travel','c-tech','content','i18n'];
 FILES.forEach(f=>require(path.join(SRC,f+'.js')));
 const G=globalThis.G;
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

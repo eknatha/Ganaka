@@ -1,19 +1,19 @@
 const {chromium}=require('playwright');const base='http://localhost:8765';let fails=0;const ok=(c,m)=>{if(!c){fails++;console.log('FAIL',m);}};
-(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900},permissions:['clipboard-read','clipboard-write']});const p=await ctx.newPage();
+(async()=>{const b=await chromium.launch();const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Kolkata',locale:'en-IN',permissions:['clipboard-read','clipboard-write']});const p=await ctx.newPage();
 await p.goto(base+'/emi/');await p.waitForSelector('.hero-res');
-await p.fill('#f-P','10,00,000');await p.fill('#f-rate','8.5');await p.waitForTimeout(250);ok((await p.textContent('.hero-res .v')).includes('8,678.23')==false?true:true,'');
+await p.fill('#f-P','10,00,000');await p.fill('#f-rate','8.5');await p.waitForTimeout(600);ok((await p.textContent('.hero-res .v')).includes('8,678.23')==false?true:true,'');
 let hv=await p.textContent('.hero-res .v');console.log('comma input ->',hv);ok(hv.replace(/[^\d.]/g,'')==='8678.23'||hv.includes('8,678'),'comma input');
-await p.fill('#f-P','abc');await p.waitForTimeout(250);ok(await p.locator('#out .err').count()===1,'invalid shows error');
-await p.fill('#f-P','');await p.waitForTimeout(250);ok(await p.locator('#out .err').count()===1,'empty amount -> calc message');
-await p.fill('#f-P','1000000');await p.fill('#f-n','1000');await p.waitForTimeout(250);ok((await p.textContent('#out .err'))?.includes('too large'),'cap message');
+await p.fill('#f-P','abc');await p.waitForTimeout(600);ok(await p.locator('#out .err').count()===1,'invalid shows error');
+await p.fill('#f-P','');await p.waitForTimeout(600);ok(await p.locator('#out .err').count()===1,'empty amount -> calc message');
+await p.fill('#f-P','1000000');await p.fill('#f-n','1000');await p.waitForTimeout(600);ok((await p.textContent('#out .err'))?.includes('too large'),'cap message');
 // url reflects state
-await p.fill('#f-n','20');await p.waitForTimeout(250);ok(p.url().includes('P=1000000')&&p.url().includes('n=20')==false||true,'url');console.log(p.url());
+await p.fill('#f-n','20');await p.waitForTimeout(600);ok(p.url().includes('P=1000000')&&p.url().includes('n=20')==false||true,'url');console.log(p.url());
 // copy link
 await p.click('text=Copy link');await p.waitForSelector('#toast:not([hidden])',{timeout:3000}).catch(()=>{});ok(await p.locator('#toast:visible').count()===1,'toast');const cl=await p.evaluate(()=>navigator.clipboard.readText());ok(cl.includes('/emi/?P=1000000'),'copied link '+cl);
 // scientific
-await p.goto(base+'/scientific/');await p.waitForSelector('.hero-res');await p.fill('#f-e','2^10 + 5!');await p.waitForTimeout(250);ok((await p.textContent('.hero-res .v'))==='1144','scientific '+await p.textContent('.hero-res .v'));
-await p.fill('#f-e','2+*');await p.waitForTimeout(250);ok(await p.locator('#out .err').count()===1,'parser error');
-await p.fill('#f-e','alert(1)');await p.waitForTimeout(250);ok(await p.locator('#out .err').count()===1,'no code exec');
+await p.goto(base+'/scientific/');await p.waitForSelector('.hero-res');await p.fill('#f-e','2^10 + 5!');await p.waitForTimeout(600);ok((await p.textContent('.hero-res .v'))==='1144','scientific '+await p.textContent('.hero-res .v'));
+await p.fill('#f-e','2+*');await p.waitForTimeout(600);ok(await p.locator('#out .err').count()===1,'parser error');
+await p.fill('#f-e','alert(1)');await p.waitForTimeout(600);ok(await p.locator('#out .err').count()===1,'no code exec');
 // rows
 await p.goto(base+'/gpa/');await p.waitForSelector('.hero-res');const n0=await p.locator('.rowsed tbody tr').count();await p.click('.addrow');ok(await p.locator('.rowsed tbody tr').count()===n0+1,'add row');
 await p.click('.rowsed tbody tr:last-child button');ok(await p.locator('.rowsed tbody tr').count()===n0,'remove row');

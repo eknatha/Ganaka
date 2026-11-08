@@ -2,6 +2,7 @@
 var N=G.N,S=G.S,R=G.R,def=G.def,fail=G.fail,pmt=G.pmt;
 function need(c,m){if(!c)fail(m);}
 function pos(v,ids){ids.forEach(function(k){need(isFinite(v[k])&&v[k]>=0,'Enter a valid '+k);});}
+function area(rows,names,gainIdx){return{type:'area',kind:'cur',xlabel:'Year',x:rows.map(function(r){return r[0];}),stack:[{name:names[0],values:rows.map(function(r){return r[1];})},{name:names[1],values:rows.map(function(r){return r[2];})}]};}
 var FREQ=[[12,'Monthly'],[4,'Quarterly'],[2,'Half-yearly'],[1,'Yearly']];
 
 // Indian tax config. Verify against the official Income Tax portal before relying on it.
@@ -29,9 +30,9 @@ def({id:'emi',cat:'fin',name:'EMI Calculator',desc:'Monthly instalment, total in
  formula:'EMI = P × r × (1+r)^n ÷ ((1+r)^n − 1), where r is the monthly rate and n the number of months.',
  calc:function(v){G.cap(v,['n'],v.u==='y'?100:1200,'Tenure');pos(v,['P','rate','n']);need(v.P>0&&v.n>0,'Amount and tenure must be above zero');var n=v.u==='y'?v.n*12:v.n,r=v.rate/1200,e=pmt(v.P,r,n),tot=e*n;
   var bal=v.P,rows=[],yr={};for(var k=1;k<=Math.round(n);k++){var i=bal*r,pr=Math.min(e-i,bal);bal-=pr;var y=Math.ceil(k/12);yr[y]=yr[y]||[0,0,0];yr[y][0]+=pr;yr[y][1]+=i;yr[y][2]=Math.max(bal,0);}
-  Object.keys(yr).forEach(function(y){rows.push([+y,yr[y][0],yr[y][1],yr[y][2]]);});
+  var cp=0,ci=0,ys=[],pp=[],ii=[],bb=[];Object.keys(yr).forEach(function(y){rows.push([+y,yr[y][0],yr[y][1],yr[y][2]]);cp+=yr[y][0];ci+=yr[y][1];ys.push(+y);pp.push(cp);ii.push(ci);bb.push(yr[y][2]);});
   return{res:[R('Monthly EMI',e,'cur',{hero:1}),R('Total interest',tot-v.P,'cur'),R('Total payment',tot,'cur'),R('Interest share',(tot-v.P)/tot*100,'pct')],
-   chart:{type:'donut',data:[['Principal',v.P],['Interest',tot-v.P]]},table:{title:'Year-wise schedule',cols:['Year','Principal paid','Interest paid','Balance'],kinds:['int','cur','cur','cur'],rows:rows}};}});
+   chart:{type:'donut',kind:'cur',centerLabel:'Total payment',data:[['Principal',v.P],['Interest',tot-v.P]]},chart2:{type:'area',kind:'cur',xlabel:'Year',x:ys,stack:[{name:'Principal paid',values:pp},{name:'Interest paid',values:ii}],line:{name:'Balance left',values:bb}},table:{title:'Year-wise schedule',cols:['Year','Principal paid','Interest paid','Balance'],kinds:['int','cur','cur','cur'],rows:rows}};}});
 
 def({id:'loan-prepay',cat:'fin',name:'Loan Prepayment Calculator',desc:'See how much interest and time an extra monthly payment saves.',keywords:'amortization extra payment prepay emi',
  fields:[N('P','Loan amount',2500000),N('rate','Interest rate (% per year)',9,{step:.05}),N('yrs','Tenure (years)',20),N('extra','Extra payment each month',5000)],
@@ -45,14 +46,14 @@ def({id:'sip',cat:'fin',name:'SIP Calculator',desc:'Future value of a monthly in
  formula:'FV = M × ((1+i)^n − 1) ÷ i × (1+i), with i = annual rate ÷ 12 and n = months (instalments at start of month).',
  calc:function(v){G.cap(v,['yrs'],100,'Period');pos(v,['m','rate','yrs']);var i=v.rate/1200,n=v.yrs*12,fv=i===0?v.m*n:v.m*((Math.pow(1+i,n)-1)/i)*(1+i),inv=v.m*n,rows=[];
   for(var y=1;y<=v.yrs;y++){var k=y*12,f=i===0?v.m*k:v.m*((Math.pow(1+i,k)-1)/i)*(1+i);rows.push([y,v.m*k,f-v.m*k,f]);}
-  return{res:[R('Maturity value',fv,'cur',{hero:1}),R('Amount invested',inv,'cur'),R('Estimated gain',fv-inv,'cur'),R('Wealth multiple',fv/inv,'x')],chart:{type:'donut',data:[['Invested',inv],['Gain',fv-inv]]},
+  return{res:[R('Maturity value',fv,'cur',{hero:1}),R('Amount invested',inv,'cur'),R('Estimated gain',fv-inv,'cur'),R('Wealth multiple',fv/inv,'x')],chart:{type:'donut',kind:'cur',centerLabel:'Maturity value',data:[['Invested',inv],['Gain',fv-inv]]},chart2:area(rows,['Invested','Gain']),
    table:{title:'Year-wise growth',cols:['Year','Invested','Gain','Value'],kinds:['int','cur','cur','cur'],rows:rows}};}});
 
 def({id:'step-up-sip',cat:'fin',name:'Step-up SIP Calculator',desc:'SIP where the monthly amount rises by a fixed percentage every year.',keywords:'increasing sip annual increase',
  fields:[N('m','Starting monthly investment',10000),N('step','Yearly increase (%)',10),N('rate','Expected return (% per year)',12,{step:.1}),N('yrs','Period (years)',15)],
  formula:'Month by month: balance = (balance + instalment) × (1 + i); the instalment is multiplied by (1 + step) after every 12 months.',
  calc:function(v){G.cap(v,['yrs'],100,'Period');pos(v,['m','step','rate','yrs']);var i=v.rate/1200,b=0,inv=0,a=v.m,rows=[];for(var y=1;y<=v.yrs;y++){for(var k=0;k<12;k++){b=(b+a)*(1+i);inv+=a;}rows.push([y,a,inv,b]);a*=1+v.step/100;}
-  return{res:[R('Maturity value',b,'cur',{hero:1}),R('Amount invested',inv,'cur'),R('Estimated gain',b-inv,'cur')],chart:{type:'donut',data:[['Invested',inv],['Gain',b-inv]]},table:{title:'Year-wise',cols:['Year','Monthly amount','Invested so far','Value'],kinds:['int','cur','cur','cur'],rows:rows}};}});
+  return{res:[R('Maturity value',b,'cur',{hero:1}),R('Amount invested',inv,'cur'),R('Estimated gain',b-inv,'cur')],chart:{type:'donut',kind:'cur',centerLabel:'Maturity value',data:[['Invested',inv],['Gain',b-inv]]},chart2:area(rows.map(function(r){return[r[0],r[2],r[3]-r[2]];}),['Invested','Gain']),table:{title:'Year-wise',cols:['Year','Monthly amount','Invested so far','Value'],kinds:['int','cur','cur','cur'],rows:rows}};}});
 
 def({id:'sip-goal',cat:'fin',name:'SIP Goal Calculator',desc:'Monthly SIP needed to reach a target corpus.',keywords:'target corpus planner goal',
  fields:[N('goal','Target amount',10000000),N('rate','Expected return (% per year)',12,{step:.1}),N('yrs','Period (years)',20)],
@@ -62,13 +63,13 @@ def({id:'sip-goal',cat:'fin',name:'SIP Goal Calculator',desc:'Monthly SIP needed
 
 def({id:'lumpsum',cat:'fin',name:'Lumpsum Calculator',desc:'Growth of a one-time investment.',keywords:'one time investment',
  fields:[N('P','Investment',500000),N('rate','Expected return (% per year)',12,{step:.1}),N('yrs','Period (years)',10)],
- formula:'FV = P × (1 + r)^t.',calc:function(v){G.cap(v,['yrs'],1000,'Years');pos(v,['P','rate','yrs']);var f=G.fv(v.P,v.rate/100,v.yrs);return{res:[R('Maturity value',f,'cur',{hero:1}),R('Gain',f-v.P,'cur'),R('Multiple',f/v.P,'x')],chart:{type:'donut',data:[['Invested',v.P],['Gain',f-v.P]]}};}});
+ formula:'FV = P × (1 + r)^t.',calc:function(v){G.cap(v,['yrs'],1000,'Years');pos(v,['P','rate','yrs']);var f=G.fv(v.P,v.rate/100,v.yrs),lr=[];for(var y=1;y<=Math.min(Math.ceil(v.yrs),100);y++){var fy=G.fv(v.P,v.rate/100,Math.min(y,v.yrs));lr.push([y,v.P,fy-v.P]);}return{res:[R('Maturity value',f,'cur',{hero:1}),R('Gain',f-v.P,'cur'),R('Multiple',f/v.P,'x')],chart:{type:'donut',kind:'cur',centerLabel:'Maturity value',data:[['Invested',v.P],['Gain',f-v.P]]},chart2:lr.length>1?area(lr,['Invested','Gain']):null};}});
 
 def({id:'compound-interest',cat:'fin',name:'Compound Interest Calculator',desc:'Compound growth with any compounding frequency and optional monthly top-ups.',keywords:'interest growth savings',
  fields:[N('P','Starting amount',100000),N('add','Monthly addition',0),N('rate','Interest rate (% per year)',7,{step:.05}),N('yrs','Years',10),S('f','Compounding',FREQ.concat([[365,'Daily']]),12)],
  formula:'A = P(1 + r/f)^(f·t). Monthly additions are accumulated month by month using the effective monthly rate.',
  calc:function(v){G.cap(v,['yrs'],100,'Period');pos(v,['P','add','rate','yrs']);var f=+v.f,eff=Math.pow(1+v.rate/100/f,f/12)-1,b=v.P,rows=[];for(var y=1;y<=v.yrs;y++){for(var k=0;k<12;k++)b=b*(1+eff)+v.add;rows.push([y,v.P+v.add*12*y,b-v.P-v.add*12*y,b]);}
-  var inv=v.P+v.add*12*v.yrs;return{res:[R('Final balance',b,'cur',{hero:1}),R('Total contributed',inv,'cur'),R('Interest earned',b-inv,'cur')],chart:{type:'donut',data:[['Contributed',inv],['Interest',b-inv]]},table:{title:'Year-wise',cols:['Year','Contributed','Interest','Balance'],kinds:['int','cur','cur','cur'],rows:rows}};}});
+  var inv=v.P+v.add*12*v.yrs;return{res:[R('Final balance',b,'cur',{hero:1}),R('Total contributed',inv,'cur'),R('Interest earned',b-inv,'cur')],chart:{type:'donut',kind:'cur',centerLabel:'Final balance',data:[['Contributed',inv],['Interest',b-inv]]},chart2:area(rows,['Contributed','Interest']),table:{title:'Year-wise',cols:['Year','Contributed','Interest','Balance'],kinds:['int','cur','cur','cur'],rows:rows}};}});
 
 def({id:'simple-interest',cat:'fin',name:'Simple Interest Calculator',desc:'Interest and total on a principal at a flat rate.',keywords:'si',
  fields:[N('P','Principal',100000),N('rate','Rate (% per year)',8),N('t','Time (years)',3)],formula:'SI = P × r × t ÷ 100.',

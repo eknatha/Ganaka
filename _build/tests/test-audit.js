@@ -7,7 +7,7 @@ const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const seen
 (async()=>{const b=await chromium.launch();
 const pages=['/','/emi/','/scientific/','/graph/','/invoice/','/income-tax-india/','/color/'];
 for(const theme of ['light','dark','new'])for(const lang of ['en','ta','ml']){
- const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.addInitScript(([t,l])=>{try{localStorage.setItem('el-theme',t);localStorage.setItem('ga-set',JSON.stringify({lang:l,fmt:'in',cur:'₹'}));}catch(e){}},[theme,lang]);
+ const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Kolkata',locale:'en-IN'});await ctx.addInitScript(([t,l])=>{try{localStorage.setItem('el-theme',t);localStorage.setItem('ga-set',JSON.stringify({lang:l,fmt:'in',cur:'₹'}));}catch(e){}},[theme,lang]);
  const p=await ctx.newPage();let low=[];
  for(const w of [320,375,768,1100,1440]){await p.setViewportSize({width:w,height:900});
   for(const u of pages){await p.goto(base+u);await p.waitForSelector(u==='/'?'.card':'.hero-res');
@@ -15,7 +15,7 @@ for(const theme of ['light','dark','new'])for(const lang of ['en','ta','ml']){
    if(w===1100){const items=await p.evaluate(AUDIT);for(const it of items){const r=ratio(it.fg,it.bg),need=(it.size>=24||(it.size>=18.66&&it.bold))?3:4.5;if(r<need)low.push(`${u} "${it.t}" ${r.toFixed(2)}<${need} ${it.fg}/${it.bg}`);}}}}
  ok(!low.length,`contrast ${theme}/${lang}: `+[...new Set(low)].slice(0,6).join(' | '));await ctx.close();}
 // keyboard + popover
-{const ctx=await b.newContext({viewport:{width:1280,height:900}});const p=await ctx.newPage();await p.goto(base+'/sip/');await p.waitForSelector('.hero-res');
+{const ctx=await b.newContext({viewport:{width:1280,height:900},timezoneId:'Asia/Kolkata',locale:'en-IN'});const p=await ctx.newPage();await p.goto(base+'/sip/');await p.waitForSelector('.hero-res');
  await p.focus('.ibtn[aria-controls=setp]');await p.keyboard.press('Enter');ok(await p.isVisible('#setp'),'popover opens by keyboard');await p.keyboard.press('Escape');ok(!(await p.isVisible('#setp')),'Esc closes');ok(await p.evaluate(()=>document.activeElement.getAttribute('aria-controls'))==='setp','focus returns');
  await p.keyboard.press('/');ok(await p.evaluate(()=>document.activeElement.id)==='qs','slash focuses search');await p.keyboard.type('bmi');await p.keyboard.press('ArrowDown');await p.keyboard.press('Enter');await p.waitForURL('**/bmi/');ok(true,'search nav');
  // every input labelled
